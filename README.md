@@ -6,11 +6,9 @@
 
 ## CLI
 
-###  Install
+###  Build
 
-Just [download](https://github.com/pyed/transmission-telegram/releases) the appropriate binary for your OS, place `transmission-telegram` in your `$PATH` and you are good to go.
-
-Or if you have `Go` installed: `go get -u github.com/pyed/transmission-telegram`
+docker buildx build --platform linux/arm64 -t transmission-telegram:arm64 . --load
 
 ## Usage
 
