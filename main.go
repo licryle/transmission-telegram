@@ -304,6 +304,58 @@ func init() {
 
 func main() {
 	for update := range Updates {
+		// Handle inline button presses first.
+		if update.CallbackQuery != nil {
+			cq := update.CallbackQuery
+
+			// master check.
+			if cq.From != nil && !Masters.Contains(cq.From.UserName) {
+				logger.Printf("INFO Ignored a callback from %s", cq.From.String())
+				continue
+			}
+
+			// Tell Telegram we handled the button press.
+			cb := tgbotapi.NewCallback(cq.ID, "")
+			if _, err := Bot.AnswerCallbackQuery(cb); err != nil {
+				logger.Printf("ERROR AnswerCallbackQuery %s", err)
+			}
+
+			parts := strings.SplitN(cq.Data, ":", 2)
+			action := strings.ToLower(parts[0])
+
+			var args []string
+			if len(parts) == 2 {
+				args = []string{parts[1]}
+			}
+
+			// Build a fake Update with a Message so your existing handlers work.
+			fake := tgbotapi.Update{
+				Message: &tgbotapi.Message{
+					Chat: cq.Message.Chat,
+					From: cq.From,
+				},
+			}
+
+			switch action {
+			case "info":
+				go info(fake, args)
+			case "start":
+				go start(fake, args)
+			case "stop":
+				go stop(fake, args)
+			case "check":
+				go check(fake, args)
+			case "del":
+				go del(fake, args)
+			case "deldata":
+				go deldata(fake, args)
+			default:
+				go send("Unknown action", cq.Message.Chat.ID, false)
+			}
+
+			continue
+		}
+
 		// ignore edited messages
 		if update.Message == nil {
 			continue
