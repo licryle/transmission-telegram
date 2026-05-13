@@ -16,6 +16,8 @@
           buildInputs = with pkgs; [
             go
             gnumake
+
+            podman
           ];
         };
       }
