@@ -21,7 +21,7 @@ docker buildx build --platform linux/arm64 -t transmission-telegram:arm64 . --lo
 
 ```
 docker run -d --name transmission-telegram \
-kevinhalpin/transmission-telegram:latest \
+licryle/transmission-telegram:latest \
 -token=<Your Bot Token> \
 -master=<Your Username> \
 -url=<Transmission RPC> \
@@ -54,6 +54,6 @@ telegram-transmission-bot:
       - plex
       - emby
     network_mode: 'host'
-    image: kevinhalpin/transmission-telegram:latest
+    image: licryle/transmission-telegram:latest
     command: '-token=${TELEGRAM_TRANSMISSION_BOT} -master=${TELEGRAM_USERNAME} -url=${TRANSMISSION_URL} -username=${TRANSMISSION_USERNAME} -password=${PASS}'
 ```
