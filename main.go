@@ -14,7 +14,7 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/pyed/tailer"
-	"github.com/pyed/transmission"
+	"github.com/licryle/go-transmission"
 	tgbotapi "gopkg.in/telegram-bot-api.v4"
 )
 
@@ -1173,21 +1173,15 @@ func latest(ud tgbotapi.Update, tokens []string) {
 // info takes an id of a torrent and returns some info about it
 func info(ud tgbotapi.Update, tokens []string) {
 	if len(tokens) == 0 {
-		send("*info:* needs a torrent ID number", ud.Message.Chat.ID, false)
+		send("*info:* needs a torrent ID number or hash", ud.Message.Chat.ID, false)
 		return
 	}
 
 	for _, id := range tokens {
-		torrentID, err := strconv.Atoi(id)
-		if err != nil {
-			send(fmt.Sprintf("*info:* %s is not a number", id), ud.Message.Chat.ID, false)
-			continue
-		}
-
 		// get the torrent
-		torrent, err := Client.GetTorrent(torrentID)
+		torrent, err := Client.GetTorrent(id)
 		if err != nil {
-			send(fmt.Sprintf("*info:* Can't find a torrent with an ID of %d", torrentID), ud.Message.Chat.ID, false)
+			send(fmt.Sprintf("*info:* Can't find a torrent with an ID or hash of %v", id), ud.Message.Chat.ID, false)
 			continue
 		}
 
@@ -1216,7 +1210,7 @@ func info(ud tgbotapi.Update, tokens []string) {
 		}
 
 		// this go-routine will make the info live for 'duration * interval'
-		go func(torrentID, msgID int) {
+		go func(torrentID any, msgID int) {
 			for i := 0; i < duration; i++ {
 				time.Sleep(time.Second * interval)
 				torrent, err = Client.GetTorrent(torrentID)
@@ -1250,7 +1244,7 @@ func info(ud tgbotapi.Update, tokens []string) {
 			editConf := tgbotapi.NewEditMessageText(ud.Message.Chat.ID, msgID, info)
 			editConf.ParseMode = tgbotapi.ModeMarkdown
 			Bot.Send(editConf)
-		}(torrentID, msgID)
+		}(id, msgID)
 	}
 }
 
@@ -1273,20 +1267,15 @@ func stop(ud tgbotapi.Update, tokens []string) {
 	}
 
 	for _, id := range tokens {
-		num, err := strconv.Atoi(id)
-		if err != nil {
-			send(fmt.Sprintf("*stop:* %s is not a number", id), ud.Message.Chat.ID, false)
-			continue
-		}
-		status, err := Client.StopTorrent(num)
+		status, err := Client.StopTorrent(id)
 		if err != nil {
 			send("*stop:* "+err.Error(), ud.Message.Chat.ID, false)
 			continue
 		}
 
-		torrent, err := Client.GetTorrent(num)
+		torrent, err := Client.GetTorrent(id)
 		if err != nil {
-			send(fmt.Sprintf("[fail] *stop:* No torrent with an ID of %d", num), ud.Message.Chat.ID, false)
+			send(fmt.Sprintf("[fail] *stop:* No torrent with an ID of %v", id), ud.Message.Chat.ID, false)
 			return
 		}
 		send(fmt.Sprintf("[%s] *stop:* %s", status, torrent.Name), ud.Message.Chat.ID, false)
@@ -1313,20 +1302,15 @@ func start(ud tgbotapi.Update, tokens []string) {
 	}
 
 	for _, id := range tokens {
-		num, err := strconv.Atoi(id)
-		if err != nil {
-			send(fmt.Sprintf("*start:* %s is not a number", id), ud.Message.Chat.ID, false)
-			continue
-		}
-		status, err := Client.StartTorrent(num)
+		status, err := Client.StartTorrent(id)
 		if err != nil {
 			send("*start:* "+err.Error(), ud.Message.Chat.ID, false)
 			continue
 		}
 
-		torrent, err := Client.GetTorrent(num)
+		torrent, err := Client.GetTorrent(id)
 		if err != nil {
-			send(fmt.Sprintf("[fail] *start:* No torrent with an ID of %d", num), ud.Message.Chat.ID, false)
+			send(fmt.Sprintf("[fail] *start:* No torrent with an ID or Hash of %v", id), ud.Message.Chat.ID, false)
 			return
 		}
 		send(fmt.Sprintf("[%s] *start:* %s", status, torrent.Name), ud.Message.Chat.ID, false)
@@ -1353,20 +1337,15 @@ func check(ud tgbotapi.Update, tokens []string) {
 	}
 
 	for _, id := range tokens {
-		num, err := strconv.Atoi(id)
-		if err != nil {
-			send(fmt.Sprintf("*check:* %s is not a number", id), ud.Message.Chat.ID, false)
-			continue
-		}
-		status, err := Client.VerifyTorrent(num)
+		status, err := Client.VerifyTorrent(id)
 		if err != nil {
 			send("*check:* "+err.Error(), ud.Message.Chat.ID, false)
 			continue
 		}
 
-		torrent, err := Client.GetTorrent(num)
+		torrent, err := Client.GetTorrent(id)
 		if err != nil {
-			send(fmt.Sprintf("[fail] *check:* No torrent with an ID of %d", num), ud.Message.Chat.ID, false)
+			send(fmt.Sprintf("[fail] *check:* No torrent with an ID or Hash of %v", id), ud.Message.Chat.ID, false)
 			return
 		}
 		send(fmt.Sprintf("[%s] *check:* %s", status, torrent.Name), ud.Message.Chat.ID, false)
@@ -1543,13 +1522,7 @@ func del(ud tgbotapi.Update, tokens []string) {
 
 	// loop over tokens to read each potential id
 	for _, id := range tokens {
-		num, err := strconv.Atoi(id)
-		if err != nil {
-			send(fmt.Sprintf("*del:* %s is not an ID", id), ud.Message.Chat.ID, false)
-			return
-		}
-
-		name, err := Client.DeleteTorrent(num, false)
+		name, err := Client.DeleteTorrent(id, false)
 		if err != nil {
 			send("*del:* "+err.Error(), ud.Message.Chat.ID, false)
 			return
@@ -1568,13 +1541,7 @@ func deldata(ud tgbotapi.Update, tokens []string) {
 	}
 	// loop over tokens to read each potential id
 	for _, id := range tokens {
-		num, err := strconv.Atoi(id)
-		if err != nil {
-			send(fmt.Sprintf("*deldata:* %s is not an ID", id), ud.Message.Chat.ID, false)
-			return
-		}
-
-		name, err := Client.DeleteTorrent(num, true)
+		name, err := Client.DeleteTorrent(id, true)
 		if err != nil {
 			send("*deldata:* "+err.Error(), ud.Message.Chat.ID, false)
 			return

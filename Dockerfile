@@ -9,10 +9,12 @@ ENV CGO_ENABLED=0
 RUN apk add --no-cache git
 
 WORKDIR /src
+
+COPY go.mod go.sum ./
+RUN go mod download
+
 COPY . .
 
-RUN go mod init transmission-telegram || true
-RUN go mod tidy
 RUN go build -o /out/transmission-telegram .
 
 FROM docker.io/alpine:latest
