@@ -15,7 +15,7 @@ RUN go mod init transmission-telegram || true
 RUN go mod tidy
 RUN go build -o /out/transmission-telegram .
 
-FROM alpine:latest
+FROM docker.io/alpine:latest
 RUN apk add --no-cache ca-certificates
 COPY --from=build /out/transmission-telegram /transmission-telegram
 
